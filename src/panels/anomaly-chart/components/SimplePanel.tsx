@@ -1,69 +1,96 @@
 import React from 'react';
-import { PanelProps } from '@grafana/data';
+import { DataFrame, PanelProps } from '@grafana/data';
 import { SimpleOptions } from '../types';
-import { css, cx } from '@emotion/css';
-import { useStyles2, useTheme2 } from '@grafana/ui';
+import { useTheme2 } from '@grafana/ui';
 import { PanelDataErrorView } from '@grafana/runtime';
+import { AnomalyChart } from '@iot-app-kit/react-components';
+import { AnomalyObjectDataInput } from '@iot-app-kit/react-components/dist/es/data/transformers/anomaly/object/input';
 
 interface Props extends PanelProps<SimpleOptions> {}
 
-const getStyles = () => {
-  return {
-    wrapper: css`
-      font-family: Open Sans;
-      position: relative;
-    `,
-    svg: css`
-      position: absolute;
-      top: 0;
-      left: 0;
-    `,
-    textBox: css`
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      padding: 10px;
-    `,
-  };
-};
-
-export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id }) => {
+export const SimplePanel: React.FC<Props> = ({ data, fieldConfig, id, timeRange }) => {
   const theme = useTheme2();
-  const styles = useStyles2(getStyles);
+  const appkitTheme = theme.isLight
+    ? 'light'
+    : 'dark';
 
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
   }
 
-  return (
-    <div
-      className={cx(
-        styles.wrapper,
-        css`
-          width: ${width}px;
-          height: ${height}px;
-        `
-      )}
-    >
-      <svg
-        className={styles.svg}
-        width={width}
-        height={height}
-        xmlns="http://www.w3.org/2000/svg"
-        xmlnsXlink="http://www.w3.org/1999/xlink"
-        viewBox={`-${width / 2} -${height / 2} ${width} ${height}`}
-      >
-        <g>
-          <circle data-testid="simple-panel-circle" style={{ fill: theme.colors.primary.main }} r={100} />
-        </g>
-      </svg>
+  // Parse query data into AnomalyObjectDataInput
+  const l4eData = data.series[0];
 
-      <div className={styles.textBox}>
-        {options.showSeriesCount && (
-          <div data-testid="simple-panel-series-counter">Number of series: {data.series.length}</div>
-        )}
-        <div>Text option value: {options.text}</div>
-      </div>
-    </div>
+  // TODO: remove this validation logic
+  const firstLength = l4eData.fields[0].values.length
+  const problem = l4eData.fields.some(({values: {length}}) => length !== firstLength);
+  if (problem) {
+    console.log("there's a problem");
+    debugger;
+  }
+
+  // TODO: relies on the data transformer in AppKit
+  let parsedData: AnomalyObjectDataInput = parseAnomalyData(l4eData);
+  const dataData = {
+    state: 'success' as const,
+    value: {
+      data: parsedData,
+    },
+  };
+
+  const chart = (
+    <AnomalyChart
+      viewport={ { start: timeRange.from.toDate(), end: timeRange.to.toDate() } }
+      data={[dataData]}
+      mode={appkitTheme}
+      showTimestamp={false}
+    />
   );
+
+  return chart;
 };
+
+// TODO: relies on the data transformer in AppKit
+function parseAnomalyData(l4eData: DataFrame) {
+  const notDia = new Set(['time', 'quality', 'anomaly_score', 'prediction_reason']);
+
+  // parse timestamp
+  const timeField = l4eData.fields.find((field) => field.name === 'time');
+  if (timeField == null) {
+    // FIXME: return empty array
+    throw new Error('No time field found');
+  }
+
+  // parse prediction
+  // FIXME: should this be the prediction_reason?
+  const predictionField = l4eData.fields.find((field) => field.name === 'anomaly_score');
+  if (predictionField == null) {
+    // FIXME: return empty array
+    throw new Error('No time field found');
+  }
+
+  let parsedData: AnomalyObjectDataInput = timeField?.values.map((value, index) => {
+    return {
+      timestamp: value,
+      prediction: predictionField.values[index],
+      diagnostics: [],
+    };
+  });
+
+  // Parse query data into AnomalyObjectDataInput
+  const diaFields = l4eData.fields.filter((field) => !notDia.has(field.name));
+  for (let field of diaFields) {
+    for (let i = 0; i < field.values.length; i++) {
+      const diagnostics = parsedData[i].diagnostics;
+      diagnostics.push({
+        name: field.name,
+        value: field.values[i],
+      });
+    }
+  }
+
+  // FIXME: there's a bug where the fields values length not consistent
+  parsedData = parsedData.filter((data) => data.prediction != null);
+  return parsedData;
+}
+

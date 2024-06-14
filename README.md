@@ -34,55 +34,55 @@ App plugins can let you create a custom out-of-the-box monitoring experience by 
 1. Install dependencies
 
    ```bash
-   yarn install
+   npm install
    ```
 
 2. Build plugin in development mode and run in watch mode
 
    ```bash
-   yarn run dev
+   npm run dev
    ```
 
 3. Build plugin in production mode
 
    ```bash
-   yarn run build
+   npm run build
    ```
 
 4. Run the tests (using Jest)
 
    ```bash
    # Runs the tests and watches for changes, requires git init first
-   yarn run test
+   npm run test
 
    # Exits after running all the tests
-   yarn run test:ci
+   npm run test:ci
    ```
 
 5. Spin up a Grafana instance and run the plugin inside it (using Docker)
 
    ```bash
-   yarn run server
+   npm run server
    ```
 
 6. Run the E2E tests (using Cypress)
 
    ```bash
    # Spins up a Grafana instance first that we tests against
-   yarn run server
+   npm run server
 
    # Starts the tests
-   yarn run e2e
+   npm run e2e
    ```
 
 7. Run the linter
 
    ```bash
-   yarn run lint
+   npm run lint
 
    # or
 
-   yarn run lint:fix
+   npm run lint:fix
    ```
 
 # Distributing your plugin
