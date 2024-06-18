@@ -26,7 +26,6 @@ export const SimplePanel: React.FC<Props> = ({ data, fieldConfig, id, timeRange 
   const problem = l4eData.fields.some(({values: {length}}) => length !== firstLength);
   if (problem) {
     console.log("there's a problem");
-    debugger;
   }
 
   // TODO: relies on the data transformer in AppKit
@@ -89,8 +88,7 @@ function parseAnomalyData(l4eData: DataFrame) {
     }
   }
 
-  // FIXME: there's a bug where the fields values length not consistent
-  parsedData = parsedData.filter((data) => data.prediction != null);
+  parsedData = parsedData.filter((data) => data.prediction === 1);
   return parsedData;
 }
 

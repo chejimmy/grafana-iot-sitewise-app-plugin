@@ -9,33 +9,13 @@ test('should display "No data" in case panel data is empty', async ({
   await expect(panelEditPage.panel.locator).toContainText('No data');
 });
 
-test('should display circle when data is passed to the panel', async ({
-  panelEditPage,
-  readProvisionedDataSource,
+test('should display a stacked bar chart when data is passed to the panel', async ({
+  gotoPanelEditPage,
+  readProvisionedDashboard,
   page,
 }) => {
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.setVisualization('AwsIoTSiteWiseAnomalyChart');
-  await expect(page.getByTestId('simple-panel-circle')).toBeVisible();
-});
+  const dashboard = await readProvisionedDashboard({ fileName: 'dashboard.json' });
+  const panelEditPage = await gotoPanelEditPage({ dashboard, id: '1' });
 
-test('should display series counter when "Show series counter" option is enabled', async ({
-  panelEditPage,
-  readProvisionedDataSource,
-  page,
-  selectors,
-}) => {
-  const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
-  await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.setVisualization('AwsIoTSiteWiseAnomalyChart');
-  await panelEditPage.collapseSection('AwsIoTSiteWiseAnomalyChart');
-  await expect(page.getByTestId('simple-panel-circle')).toBeVisible();
-  const showSeriesSwitch = panelEditPage
-    .getByGrafanaSelector(
-      selectors.components.PanelEditor.OptionsPane.fieldLabel('AwsIoTSiteWiseAnomalyChart Show series counter')
-    )
-    .getByLabel('Toggle switch');
-  await showSeriesSwitch.click();
-  await expect(page.getByTestId('simple-panel-series-counter')).toBeVisible();
+  await expect(page.getByTestId('anomaly-chart')).toHaveScreenshot('anomaly-chart-display.png');
 });
