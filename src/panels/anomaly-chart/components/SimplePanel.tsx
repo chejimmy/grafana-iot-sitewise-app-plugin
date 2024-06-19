@@ -1,25 +1,37 @@
 import React from 'react';
-import { DataFrame, PanelProps } from '@grafana/data';
+import { DataFrame, PanelProps, SelectableValue, getFrameDisplayName } from '@grafana/data';
 import { SimpleOptions } from '../types';
-import { useTheme2 } from '@grafana/ui';
+import { Select, useTheme2 } from '@grafana/ui';
 import { PanelDataErrorView } from '@grafana/runtime';
 import { AnomalyChart } from '@iot-app-kit/react-components';
 import { AnomalyObjectDataInput } from '@iot-app-kit/react-components/dist/es/data/transformers/anomaly/object/input';
 
-interface Props extends PanelProps<SimpleOptions> {}
+interface Props extends PanelProps<SimpleOptions> {};
 
-export const SimplePanel: React.FC<Props> = ({ data, fieldConfig, id, timeRange }) => {
+export const SimplePanel: React.FC<Props> = (props: Props) => {
+  const { data, fieldConfig, id, timeRange, options } = props;
+  const frames = data.series;
+
   const theme = useTheme2();
   const appkitTheme = theme.isLight
     ? 'light'
     : 'dark';
 
-  if (data.series.length === 0) {
+  if (frames.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
   }
 
+  const names = frames.map((frame, index) => {
+    return {
+      label: getFrameDisplayName(frame),
+      value: index,
+    };
+  });
+
+  const currentIndex = getCurrentFrameIndex(frames, options);
+
   // Parse query data into AnomalyObjectDataInput
-  const l4eData = data.series[0];
+  const l4eData = frames[currentIndex];
 
   // TODO: remove this validation logic
   const firstLength = l4eData.fields[0].values.length
@@ -46,8 +58,26 @@ export const SimplePanel: React.FC<Props> = ({ data, fieldConfig, id, timeRange 
     />
   );
 
-  return chart;
+  return (
+    <>
+      {chart}
+      <div>
+        <Select options={names} value={names[currentIndex]} onChange={(val) => onChangeTableSelection(val, props)} />
+      </div>
+    </>
+  );
 };
+
+function getCurrentFrameIndex(frames: DataFrame[], options: SimpleOptions) {
+  return options.frameIndex > 0 && options.frameIndex < frames.length ? options.frameIndex : 0;
+}
+
+function onChangeTableSelection(val: SelectableValue<number>, props: Props) {
+  props.onOptionsChange({
+    ...props.options,
+    frameIndex: val.value || 0,
+  });
+}
 
 // TODO: relies on the data transformer in AppKit
 function parseAnomalyData(l4eData: DataFrame) {

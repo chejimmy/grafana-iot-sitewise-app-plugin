@@ -4,8 +4,8 @@ describe('SimplePanel', () => {
   it('displays light theme', () => {});
 
   it('displays dark theme', () => {});
-
-  it('displays correct time range', () => {});
   
-  it('displays correct data', () => {});
+  it('displays default data', () => {});
+
+  it('displays selected data', () => {});
 });
