@@ -1,4 +1,6 @@
+import { css } from '@emotion/css';
 import React from 'react';
+
 import { DataFrame, PanelProps, SelectableValue, getFrameDisplayName } from '@grafana/data';
 import { SimpleOptions } from '../types';
 import { Select, useTheme2 } from '@grafana/ui';
@@ -10,6 +12,7 @@ interface Props extends PanelProps<SimpleOptions> {};
 
 export const SimplePanel: React.FC<Props> = (props: Props) => {
   const { data, fieldConfig, id, timeRange, options } = props;
+  const { axis, decimalPlaces, tooltipSort } = options;
   const frames = data.series;
 
   const theme = useTheme2();
@@ -55,16 +58,23 @@ export const SimplePanel: React.FC<Props> = (props: Props) => {
       data={[dataData]}
       mode={appkitTheme}
       showTimestamp={false}
+      axis={axis}
+      decimalPlaces={decimalPlaces}
+      tooltipSort={tooltipSort}
     />
   );
 
+  if (frames.length === 1) {
+    return chart;
+  }
+
   return (
-    <>
+    <div className={chartStyles.wrapper}>
       {chart}
-      <div>
+      <div className={chartStyles.selectWrapper}>
         <Select options={names} value={names[currentIndex]} onChange={(val) => onChangeTableSelection(val, props)} />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -122,3 +132,14 @@ function parseAnomalyData(l4eData: DataFrame) {
   return parsedData;
 }
 
+const chartStyles = {
+  wrapper: css`
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+  `,
+  selectWrapper: css`
+    padding: 8px 8px 0px 8px;
+  `,
+};

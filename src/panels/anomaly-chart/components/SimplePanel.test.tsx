@@ -8,4 +8,6 @@ describe('SimplePanel', () => {
   it('displays default data', () => {});
 
   it('displays selected data', () => {});
+
+  it('displays default data', () => {});
 });

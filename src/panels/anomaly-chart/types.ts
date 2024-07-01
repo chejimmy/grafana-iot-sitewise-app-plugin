@@ -1,8 +1,8 @@
-type SeriesSize = 'sm' | 'md' | 'lg';
+import { AnomalyChartOptions } from "@iot-app-kit/react-components/dist/es/components/anomaly-chart/types";
 
 export interface SimpleOptions {
+  axis: AnomalyChartOptions['axis'];
   frameIndex: number;
-  text: string;
-  showSeriesCount: boolean;
-  seriesCountSize: SeriesSize;
+  decimalPlaces: AnomalyChartOptions['decimalPlaces'];
+  tooltipSort: AnomalyChartOptions['tooltipSort'];
 }
